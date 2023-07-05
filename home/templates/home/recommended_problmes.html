@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block start %}
+    
+    <div class="container px-4 py-5" id="featured-3">
+        <h3 class="pb-2 border-bottom">
+            <div class="row align-items-center">
+                <div class="col">
+                    CodeForces Recommended Problems
+                </div>
+                <div class="col-auto">
+                    <hr class="my-0">
+                </div>
+                <div class="col-auto">
+                    <div class="d-flex align-items-center">
+                        <form class="d-flex me-2">
+                            <input class="form-control" type="text" placeholder="CodeForces Handle" aria-label="handle" name="handle">
+                            <button class="btn btn-outline-danger" type="submit">Update</button>
+                        </form>
+                        <a href="{% url 'home' %}">
+                            <button type="button" class="btn btn-warning">Back to Home</button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </h3>
+    </div>
+
+    <div class="container p-2 shadow rounded" id="featured-4">
+        <h5>
+            <div class="row align-items-center">
+                {% if user %}
+                <div class="col-auto">
+                    <img class="rounded shadow mx-2" src="{{ user.profile_picture }}" width="50" height="50">
+                    <a class="text-decoration-none" href="https://codeforces.com/profile/{{user.handle}}" target="_blank">
+                        <span class="mb-0" style="color: {% if user.max_rating < 1200 %}grey{% elif user.max_rating < 1400 %}seagreen{% elif user.max_rating < 1600 %}cyan{% elif user.max_rating < 1900 %}blue{% elif user.max_rating < 2100 %}purple{% elif user.max_rating < 2300 %}yellow{% elif user.max_rating < 2400 %}orange{% else %}red{% endif %}; font-style: italic;">
+                            {{ user.handle }}
+                        </span>
+                    </a>
+                </div>
+                <div class="col-auto">
+                    Max :
+                    <span class="mb-0" style="color: {% if user.max_rating < 1200 %}grey{% elif user.max_rating < 1400 %}seagreen{% elif user.max_rating < 1600 %}cyan{% elif user.max_rating < 1900 %}blue{% elif user.max_rating < 2100 %}purple{% elif user.max_rating < 2300 %}yellow{% elif user.max_rating < 2400 %}orange{% else %}red{% endif %}">   
+                        {{ user.max_rank }} <span style="color:black"> | </span> 
+                        {{ user.max_rating }}
+                    </span>
+                </div>
+                <div class="col-auto">
+                    Current : 
+                    <span class="mb-0" style="color: {% if user.current_rating < 1200 %}grey{% elif user.current_rating < 1400 %}seagreen{% elif user.current_rating < 1600 %}cyan{% elif user.current_rating < 1900 %}blue{% elif user.current_rating < 2100 %}purple{% elif user.current_rating < 2300 %}yellow{% elif user.current_rating < 2400 %}orange{% else %}red{% endif %}">
+                        {{ user.current_rank }} <span style="color:black"> | </span> 
+                        {{ user.current_rating }}
+                    </span>
+                </div>
+                <div class="col-auto mx-2 mt-2 shadow p-2 rounded" style="width: 440px;">
+                    <h6>Recently Solved Problems</h6>
+                    {% if recent_solves|length == 0 %}
+                    <p>No problem solved in last 30 days.</p>
+                    {% else %}
+                    {% for category, frequency in recent_solves.items %}
+                        <button type="button" class="btn" style="background-color: {% if category == 'A' %}grey{% elif category == 'B' %}seagreen{% elif category == 'B' %}cyan{% elif category == 'C' %}blue{% elif category == 'D' %}purple{% elif category == 'E' %}yellow{% elif category == 'F' %}orange{% else %}red{% endif %}; color: #ffffff;">{{ category }} : {{ frequency }}</button>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                {% else %}
+                User Doesn't Exist
+                {% endif %}
+            </div>
+        </h5>
+    </div>
+
+    {% if user %}
+    <div class="container p-3 shadow rounded mt-5" id="featured-5">
+        <h5>
+            <div class="row align-items-center">
+                <div class="col">
+                    Today : {{ todays_date }}
+                </div>
+                <div class="col-auto">
+                    <hr class="my-0">
+                </div>
+                {% if todays_recommended_problems %}
+                <div class="col-auto progress p-0 m-0" style="width: 50%">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated {% if todays_recommended_problems.1 <= 25 %}bg-success{% elif todays_recommended_problems.1 <= 50 %}bg-info{% elif todays_recommended_problems.1 <= 75 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{todays_recommended_problems.1}}%" aria-valuenow="{{todays_recommended_problems.1}}" aria-valuemin="0" aria-valuemax="100">{{todays_recommended_problems.1}}% Solved</div>
+                </div>
+                
+                {% endif %}
+                <div class="col-auto">
+                    <div class="d-flex align-items-center">
+                        <a href="{% if todays_recommended_problems.1 < 60 %}#{% else %}{% url 'generate_recommended_problmes' %}{% endif %}">
+                            <button class="btn btn-outline-danger " type="submit" {% if todays_recommended_problems.1 < 60 %}disabled{% endif %}>
+                                {% if todays_recommended_problems %}    
+                                🧸 Give me more problems
+                                {% else %}
+                                Generate Recommend Problems For Today
+                                {% endif %}
+                            </button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </h5>
+        {% if todays_recommended_problems %}
+        <table class="table table-striped">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Name</th>
+                <th scope="col">Rating</th>
+                <th scope="col">Tags</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for recommended_problem in todays_recommended_problems.0 %}
+                <tr>
+                    <th scope="row">{{forloop.counter}}</th>
+                    <td>
+                        <a class="text-decoration-none" href="{{recommended_problem.2}}" target="_blank">
+                            {{recommended_problem.0.problem.name}}
+                        </a>
+                    </td>
+                    <td>{{recommended_problem.0.problem.rating}}</td>
+                    <td>{{recommended_problem.0.problem.tags.all|join:', '}} </td>
+                    <td class="font-weight-bold {% if recommended_problem.1 == 'solved' %}text-success{% else %}text-danger{% endif %}"> {{ recommended_problem.1|title }} </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+    </div>
+
+    {% for problem in recommended_problems %}
+    <div class="container p-3 shadow rounded mt-5" id="featured-5">
+        <h5>
+            <div class="row align-items-center">
+                <div class="col">
+                    Date : {{ problem.2 }}
+                </div>
+                <div class="col-auto">
+                    <hr class="my-0">
+                </div>
+                <div class="col-auto progress p-0 m-0" style="width: 50%">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated {% if todays_recommended_problems.1 <= 25 %}bg-success{% elif todays_recommended_problems.1 <= 50 %}bg-info{% elif todays_recommended_problems.1 <= 75 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{todays_recommended_problems.1}}%" aria-valuenow="{{todays_recommended_problems.1}}" aria-valuemin="0" aria-valuemax="100">{{problem.1}}% Solved</div>
+                </div>
+            </div>
+        </h5>
+        <table class="table table-striped">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Name</th>
+                <th scope="col">Rating</th>
+                <th scope="col">Tags</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for recommended_problem in problem.0 %}
+                <tr>
+                    <th scope="row">{{forloop.counter}}</th>
+                    <td>
+                        <a class="text-decoration-none" href="{{recommended_problem.2}}" target="_blank">
+                            {{recommended_problem.0.problem.name}}
+                        </a>
+                    </td>
+                    <td>{{recommended_problem.0.problem.rating}}</td>
+                    <td>{{recommended_problem.0.problem.tags.all|join:', '}} </td>
+                    <td class="font-weight-bold {% if recommended_problem.1 == 'solved' %}text-success{% else %}text-danger{% endif %}">{{recommended_problem.1|title}} </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+{% endblock %}

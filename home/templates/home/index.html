@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block start %}
+    <div class="container px-4 py-5" id="featured-3">
+        <h1 class="pb-2 border-bottom">Code Chaser</h1>
+        <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+            
+
+            <div class="feature col shadow">
+                <div
+                    class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3">
+                    <svg class="bi" width="1em" height="1em">
+                        <use xlink:href="#people-circle"></use>
+                    </svg>
+                </div>
+                <h3 class="fs-2">CodeForces : Recommended Problems</h3>
+                <p>Supercharge your coding skills with CodeForces Recommended Problem. Our personalized algorithm analyzes your profile and delivering handpicked Problems to enhance your problem-solving abilities.</p>
+                <a href="{% url 'recommended_problmes' %}" class="icon-link">
+                    <h4>Solve Recommended Problems</h4>
+                    <svg class="bi">
+                        <use xlink:href="#chevron-right"></use>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="feature col shadow">
+                <div
+                    class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3">
+                    <svg class="bi" width="1em" height="1em">
+                        <use xlink:href="#people-circle"></use>
+                    </svg>
+                </div>
+                <h3 class="fs-2">Upcomming Contests</h3>
+                <p>Stay tuned for the latest updates on upcoming programming contests, and seize the opportunity to prove your coding mettle on a global platform. Let your passion for coding fuel your success in the thrilling world of competitive programming.</p>
+                <a href="{% url 'upcommingContests' 'AL' %}" class="icon-link">
+                    <h4>Check Upcomming Contests</h4>
+                    <svg class="bi">
+                        <use xlink:href="#chevron-right"></use>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="feature col shadow">
+                <div
+                    class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3">
+                    <svg class="bi" width="1em" height="1em">
+                        <use xlink:href="#collection"></use>
+                    </svg>
+                </div>
+                <h3 class="fs-2">Career</h3>
+                <p>Unleash your potential with a world of career opportunities in Bangladesh's vibrant tech
+                    community. Find exciting roles at local software companies, from industry leaders to startups.
+                    Make a meaningful impact and start your dream career today.</p>
+                <a href="{% url 'career' %}" class="icon-link">
+                    <h4>Software Companies in Bangladesh</h4>
+                    <svg class="bi">
+                        <use xlink:href="#chevron-right"></use>
+                    </svg>
+                </a>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}

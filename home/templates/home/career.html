@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block start %}
+    <div class="container px-4 py-5" id="featured-3">
+        <h2 class="pb-2 border-bottom">
+            <div class="row align-items-center">
+                <div class="col">
+                    Software Companies Details in Bangladesh
+                </div>
+                <div class="col-auto">
+                    <hr class="my-0">
+                </div>
+                <div class="col-auto">
+                    <a href="{% url 'home' %}">
+                        <button type="button" class="btn btn-warning">Back to Home</button>
+                    </a>
+
+                </div>
+            </div>
+        </h2>
+
+    </div>
+
+    <div class="container">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col" style="width: 4%;">#</th>
+                    <th scope="col" style="width: 20%;">Name</th>
+                    <th scope="col" style="width: 10%;">Website</th>
+                    <th scope="col" style="width: 10%;">Career Page</th>
+                    <th scope="col" style="width: 10%;">Facebook</th>
+                    <th scope="col" style="width: 10%;">LinkedIn</th>
+                    <th scope="col" style="width: 22%;">Position</th>
+                    <th scope="col" style="width: 15%;">Salary Range</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for company in career %}
+                <tr>
+                    <th scope="row">{{forloop.counter}}</th>
+                    <td>{{company.Name}}</td>
+                    <td>
+                        {% if company.Website == "Unknown" %}
+                        {{company.Website}}
+                        {% else %}
+                        <a href="{{company.Website}}" target="_blank">Webpage</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if company.CareerPage == "Unknown" %}
+                        {{company.CareerPage}}
+                        {% else %}
+                        <a href="{{company.CareerPage}}" target="_blank">CareerPage</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if company.Facebook == "Unknown" %}
+                        {{company.Facebook}}
+                        {% else %}
+                        <a href="{{company.Facebook}}" target="_blank">Facebook</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if company.LinkedIn == "Unknown" %}
+                        {{company.LinkedIn}}
+                        {% else %}
+                        <a href="{{company.LinkedIn}}" target="_blank">LinkedIn</a>
+                        {% endif %}
+                    </td>
+                    <td>{{company.Position}}</td>
+                    {% if company.Salary.1 <= 0 %} <td>Unknown</td>
+                        {% else %}
+                        <td>{{company.Salary.0}} - {{company.Salary.1}}</td>
+                        {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

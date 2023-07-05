@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block start %}
+    <div class="container px-4 py-5" id="featured-3">
+        <h2 class="pb-2 border-bottom">
+            <div class="row align-items-center">
+                <div class="col">
+                    Ignite Your Passion with Upcoming Contests!
+                </div>
+                <div class="col-auto">
+                    <hr class="my-0">
+                </div>
+                <div class="col-auto">
+                    <a href="{% url 'home' %}">
+                        <button type="button" class="btn btn-warning">Back to Home</button>
+                    </a>
+
+                </div>
+            </div>
+        </h2>
+
+        <div class="row mt-3">
+            <div class="col-auto">
+                <a href="{% if oj == 'AL' %}#{% else %}{% url 'upcommingContests' 'AL' %}{% endif %}">
+                    <button type="button" class="btn {% if oj == 'AL' %} btn-primary {% else %} btn-secondary {% endif %}">All</button>
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="{% if oj == 'CF' %}#{% else %}{% url 'upcommingContests' 'CF' %}{% endif %}">
+                    <button type="button" class="btn {% if oj == 'CF' %} btn-primary {% else %} btn-secondary {% endif %}">CodeForces</button>
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="{% if oj == 'TC' %}#{% else %}{% url 'upcommingContests' 'TC' %}{% endif %}">
+                    <button type="button" class="btn {% if oj == 'TC' %} btn-primary {% else %} btn-secondary {% endif %}">TopCoder</button>
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="{% if oj == 'CC' %}#{% else %}{% url 'upcommingContests' 'CC' %}{% endif %}">
+                    <button type="button" class="btn {% if oj == 'CC' %} btn-primary {% else %} btn-secondary {% endif %}">CodeChef</button>
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="{% if oj == 'AT' %}#{% else %}{% url 'upcommingContests' 'AT' %}{% endif %}">
+                    <button type="button" class="btn {% if oj == 'AT' %} btn-primary {% else %} btn-secondary {% endif %}">Atcoder</button>
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="{% if oj == 'LE' %}#{% else %}{% url 'upcommingContests' 'LE' %}{% endif %}">
+                    <button type="button" class="btn {% if oj == 'LE' %} btn-primary {% else %} btn-secondary {% endif %}">LeetCode</button>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col" style="width: 4%;">#</th>
+                    <th scope="col" style="width: 20%;">Name</th>
+                    <th scope="col" style="width: 15%;">Online Judge</th>
+                    <th scope="col" style="width: 15%;">Start Time</th>
+                    <th scope="col" style="width: 12%;">Time left</th>
+                    <th scope="col" style="width: 10%;">URL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contest in contestList %}
+                <tr>
+                    <th scope="row">{{ forloop.counter }}</th>
+                    <td>{{ contest.Name }}</td>
+                    <td>{{ contest.OJ }}</td>
+                    <td>{{ contest.Time }}</td>
+                    <td>{{ contest.TimeLeft }}</td>
+                    <td>
+                        <a href="{{ contest.URL }}" target="_blank">
+                            Register !
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
