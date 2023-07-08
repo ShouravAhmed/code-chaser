@@ -398,7 +398,7 @@ def genarate_recommend_problems(handle, rating, problem_cnt):
         for tag in submission.problem.tags.all():
             recent_tags[tag.name] = recent_tags.get(tag.name, 0) + 1
             
-    total_tag_solved = sum(frq for tag, frq in recent_tags.items())
+    total_tag_solved = sum(frq for tag, frq in recent_tags.items()) or 1
     
     rating = int((rating+50)/100) * 100
     
