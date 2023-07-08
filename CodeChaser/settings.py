@@ -102,15 +102,14 @@ WSGI_APPLICATION = 'CodeChaser.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'code_chaser',
-        'USER': 'ahmed',
-        'PASSWORD': 'www.com',
-        'HOST': 'localhost',
-        'PORT': '',
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get('DATABASE_NAME', 'code_chaser'),
+        "USER": os.environ.get('DATABASE_OWNER', 'ahmed'),
+        "PASSWORD": os.environ.get('DATABASE_PASSWORD', 'www.com'),
+        "HOST": os.environ.get('DATABASE_HOST', 'localhost'),
+        "PORT": os.environ.get('DATABASE_PORT', 5432)
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
