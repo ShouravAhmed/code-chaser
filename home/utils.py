@@ -287,7 +287,7 @@ def update_user_profile(handle):
 
 @shared_task
 def update_submissions(handle):
-    update, _ = Update.objects.get_or_create(name=f'problemset_update_{handle}')
+    update, _ = Update.objects.get_or_create(name=f'submission_update_{handle}')
 
     update_time = update.epoch_time
     update_time = datetime.datetime.fromtimestamp(update_time)
