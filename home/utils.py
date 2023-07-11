@@ -393,7 +393,7 @@ def genarate_recommend_problems(handle, rating, problem_cnt):
     start_date = int(start_date.timestamp())
     submissions = Submission.objects.filter(handle=handle, submission_time__gte=start_date)
 
-    if not submissions.exists():
+    if not Submission.objects.filter(handle=handle).exists():
         return
     
     recent_tags = {}
