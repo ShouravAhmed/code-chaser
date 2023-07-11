@@ -1,10 +1,10 @@
 services:
   - type: worker
     name: queue
-    region: ohio
+    region: singapore
     env: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "celery --app tasks worker --loglevel info --concurrency 4"
+    startCommand: "celery --app CodeChaser worker --loglevel info --concurrency 4"
     autoDeploy: false
     envVars:
       - key: CELERY_BROKER_URL
@@ -14,10 +14,10 @@ services:
           property: connectionString
   - type: web
     name: app
-    region: ohio
+    region: singapore
     env: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app"
+    startCommand: "gunicorn CodeChaser.wsgi:application"
     autoDeploy: false
     envVars:
       - key: CELERY_BROKER_URL
