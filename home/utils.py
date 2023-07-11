@@ -285,7 +285,7 @@ def update_user_profile(handle):
 
 # =======================================================================
 
-@shared_task
+#@shared_task
 def update_submissions(handle):
     update, _ = Update.objects.get_or_create(name=f'submission_update_{handle}')
 

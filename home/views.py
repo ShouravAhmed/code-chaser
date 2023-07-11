@@ -53,7 +53,7 @@ def recommended_problmes(request):
     
     # Update user submission in DB with Celery background task
     if user:
-        update_submissions.delay(handle)     
+        update_submissions(handle)#.delay(handle)
     
     # Recent solve data
     recent_solves = get_recent_solves(handle)
