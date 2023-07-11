@@ -298,8 +298,8 @@ def update_submissions(handle):
     print(f"{handle}'s : Submission Update time:", update_time)
     print(f"{handle}'s : Submission Current time:", current_time)
 
-    if time_difference > datetime.timedelta(minutes=5):
-        Update.objects.filter(name=f'problemset_update_{handle}').update(epoch_time=int(current_time.timestamp()))
+    if time_difference > datetime.timedelta(minutes=10):
+        Update.objects.filter(name=f'submission_update_{handle}').update(epoch_time=int(current_time.timestamp()))
 
         try:
             data = GetJSON()

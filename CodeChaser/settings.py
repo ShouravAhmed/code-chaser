@@ -16,20 +16,24 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+import environ
+env = environ.Env()
+environ.Env().read_env()
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG') == 'True'
+DEBUG = env('DEBUG') == 'True'
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
+if RENDER_EXTERNAL_HOSTNAME:= env('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Application definition
 
@@ -91,25 +95,20 @@ WSGI_APPLICATION = 'CodeChaser.wsgi.application'
 
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'code_chaser',
-#         'USER': 'ahmed',
-#         'PASSWORD': 'www.com',
-#         'HOST': 'localhost',
-#         'PORT': '',
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": env('DATABASE_NAME'),
+#         "USER": env('DATABASE_OWNER'),
+#         "PASSWORD": env('DATABASE_PASSWORD'),
+#         "HOST": env('DATABASE_HOST'),
+#         "PORT": env('DATABASE_PORT')
 #     }
 # }
 
+import dj_database_url
 DATABASES = {
-    'default': {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get('DATABASE_NAME', 'code_chaser'),
-        "USER": os.environ.get('DATABASE_OWNER', 'ahmed'),
-        "PASSWORD": os.environ.get('DATABASE_PASSWORD', 'www.com'),
-        "HOST": os.environ.get('DATABASE_HOST', 'localhost'),
-        "PORT": int(os.environ.get('DATABASE_PORT', 5432))
-    }
+    'default' : dj_database_url.parse(env('DATABASE_URL')),
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -146,7 +145,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 # Default primary key field type
