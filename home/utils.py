@@ -299,8 +299,6 @@ def update_submissions(handle):
     print(f"{handle}'s : Submission Current time:", current_time)
 
     if time_difference > datetime.timedelta(minutes=10):
-        Update.objects.filter(name=f'submission_update_{handle}').update(epoch_time=int(current_time.timestamp()))
-
         try:
             data = GetJSON()
             data.fetch(f'https://codeforces.com/api/user.status?handle={handle}')
@@ -347,7 +345,9 @@ def update_submissions(handle):
                     except Exception as e:
                         print("update_submission processing exception:", e)    
                         
-            transaction.commit()            
+            transaction.commit()   
+            
+            Update.objects.filter(name=f'submission_update_{handle}').update(epoch_time=int(current_time.timestamp()))         
         
         except Exception as e:
             print("update_submission EXCEPTION:", e)   
@@ -449,8 +449,6 @@ def update_problemset():
     print("Current time:", current_time)
     
     if update_time != current_time:
-        Update.objects.filter(name='problemset_update').update(epoch_time=int(current_time.timestamp()))
-
         try:
             data = GetJSON()
             data.fetch('https://codeforces.com/api/problemset.problems')
@@ -481,7 +479,9 @@ def update_problemset():
                         print("Problem set processing exception:", e) 
 
             transaction.commit()     
-
+            
+            Update.objects.filter(name='problemset_update').update(epoch_time=int(current_time.timestamp()))
+            
         except Exception as e:
             print("Problem Set Fatching Exception:", e)
     
