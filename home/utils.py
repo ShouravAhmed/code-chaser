@@ -13,6 +13,12 @@ from operator import attrgetter
 
 import random
 
+import logging
+logger = logging.getLogger(__name__)
+
+from django.db.models import Sum, Count, Q, F, FloatField, Case, When
+from django.db.models.functions import Cast, Substr
+
 
 # =======================================================================
 
@@ -160,7 +166,7 @@ class GetJSON:
             with self.session.get(url, headers = self.hdr) as responce:
                 self.json = responce.json()
         except Exception as e:
-            print("Exception:", e)
+            logger.exception(f"GetJSON Exception: {e}")
 
 # =======================================================================
 
@@ -202,25 +208,18 @@ def getUpcommingContests(name):
             onlineJudges.append(data.json)
 
     except Exception as e:
-        print("Exception:", e)    
+        logger.exception(f"getUpcommingContests Exception: {e}")    
 
     for onlineJudge in onlineJudges:
         tmpData = []
         for contest in onlineJudge:
-            # timezone = 6
-            # try:
-            #     timezone = int(str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo))
-            # except Exception as e:
-            #     print("Exception:", e)
-
             contest_date_time = " ".join(contest["start_time"].split('T')).replace('Z', ' ')
             contest_date_time = ' '.join(contest_date_time.split(' ')[:2])
             contest_date_time = contest_date_time.split('.')[0]
 
             contest_date_time = datetime.datetime.strptime(contest_date_time, '%Y-%m-%d %H:%M:%S')
             contest_date_time = contest_date_time + datetime.timedelta(hours=6)
-            # contest_date_time = contest_date_time.strftime("%d %B %Y - %I:%M %p")
-
+            
             current_time = datetime.datetime.now()
             time_left = contest_date_time - current_time
 
@@ -254,10 +253,8 @@ def getUpcommingContests(name):
         contestList.extend(iter(tmpData))
         
     return contestList
-
 # =======================================================================
 # =======================================================================
-
 def update_user_profile(handle):
     try:
         data = GetJSON()
@@ -279,81 +276,128 @@ def update_user_profile(handle):
         }
     
     except Exception as e:
-        print("update_user_profile EXCEPTION: " , e)
+        logger.exception(f"update_user_profile EXCEPTION: {e}")
     
     return None
 
+# ======================================================================= 
 # =======================================================================
 
-#@shared_task
+# @shared_task # commenting out as deploing background worker is paid
 def update_submissions(handle):
+    # Get the update information for the handle
     update, _ = Update.objects.get_or_create(name=f'submission_update_{handle}')
 
+    # Convert the update time to datetime
     update_time = update.epoch_time
     update_time = datetime.datetime.fromtimestamp(update_time)
 
+    # Get the current time and calculate the time difference
     current_time = datetime.datetime.now()
     time_difference = current_time - update_time
 
-    print(f"{handle}'s : Submission Update time:", update_time)
-    print(f"{handle}'s : Submission Current time:", current_time)
-
-    if time_difference > datetime.timedelta(minutes=10):
+    # Check if the time difference is greater than 5 minutes
+    if time_difference > datetime.timedelta(minutes=5):
+        logger.info(f"{handle}'s Submission Updating | Time: {current_time}")
         try:
+            # Fetch submissions data from the Codeforces API
             data = GetJSON()
             data.fetch(f'https://codeforces.com/api/user.status?handle={handle}')
-            
+
+            # Check if the submissions status is OK
             submissions = data.json
             if submissions['status'] != 'OK':
+                logger.exception(f"{handle}'s Submission Status Not Ok")
                 return
-             
+
+            # Get the submissions data
             submissions = submissions['result']
-            submission_fatched = 0
-            
+
+            # Fetch solved problems and all problems in bulk to optimize database queries
+            solved_problems = {
+                submission.problem.problem_id: submission
+                for submission in Submission.objects.filter(handle=handle).prefetch_related('problem')
+            }
+            all_problems = {
+                problem.problem_id: problem
+                for problem in Problem.objects.all()
+            }
+
+            # Set to track just updated problem IDs
             just_updated = set()
+
+            # Lists to store submissions for creation and update
+            submissions_to_create = []
+            submissions_to_update = []
+            submissions_to_update_time = []
             
             with transaction.atomic():
                 for submission in submissions:
-                    
                     try:
-                        if 'verdict' in submission and submission['verdict'] == 'OK':    
+                        if 'verdict' in submission and submission['verdict'] == 'OK':
                             problem_id = str(submission['problem']['contestId']) + '.' + submission['problem']['index']
-                            
+
+                            # Check if the problem has already been updated
                             if problem_id not in just_updated:
                                 just_updated.add(problem_id)
-                                
-                                problem = Problem.objects.filter(problem_id=problem_id)
-                                if problem.exists():
-                                    problem = problem[0]
-                                    
-                                    if not Submission.objects.filter(handle=handle, problem=problem).exists():
-                                        Submission.objects.create(
-                                            handle=handle, 
-                                            problem=problem,
-                                            submission_time=submission['creationTimeSeconds']
-                                        )
-                                    else:
-                                        Submission.objects.filter(
-                                            handle=handle, 
-                                            problem=problem
-                                        ).update(submission_time=submission['creationTimeSeconds'])
-                                    
-                                    submission_fatched += 1
-                                    if submission_fatched % 10 == 0:
-                                        print(f'{submission_fatched} submission fetched for user: {handle}')
-                    
-                    except Exception as e:
-                        print("update_submission processing exception:", e)    
-                        
-            transaction.commit()   
-            
-            Update.objects.filter(name=f'submission_update_{handle}').update(epoch_time=int(current_time.timestamp()))         
-        
-        except Exception as e:
-            print("update_submission EXCEPTION:", e)   
-            return None    
 
-# =======================================================================
+                                # Check if the problem is already solved or needs to be created
+                                if problem_id not in solved_problems:
+                                    if problem_id in all_problems:
+                                        # Create a new submission object
+                                        submissions_to_create.append(
+                                            Submission(
+                                                handle=handle,
+                                                problem=all_problems[problem_id],
+                                                submission_time=submission['creationTimeSeconds']
+                                            )
+                                        )
+                                elif solved_problems[problem_id].submission_time != submission['creationTimeSeconds']:
+                                    # Update the submission time for an existing solved problem
+                                    submissions_to_update.append(solved_problems[problem_id])
+                                    submissions_to_update_time.append(submission['creationTimeSeconds'])
+
+                    except Exception as e:
+                        logger.exception(f"update_submission processing exception: {e}")
+
+                    # Check if 100 submissions are ready for creation
+                    if len(submissions_to_create) >= 100:
+                        # Create the submissions in bulk
+                        Submission.objects.bulk_create(submissions_to_create)
+                        submissions_to_create.clear()
+                        logger.info(f"100 Submissions Created for: {handle}")
+
+                if submissions_to_create:
+                    # Create the remaining submissions in bulk
+                    Submission.objects.bulk_create(submissions_to_create)
+                    logger.info(f"{len(submissions_to_create)} Submissions Created for: {handle}")
+
+                if submissions_to_update:
+                    # Create the case statements for updating submission times
+                    case_statements = [
+                        When(pk=submission_obj.pk, then=submission_time)
+                        for submission_obj, submission_time in zip(submissions_to_update, submissions_to_update_time)
+                    ]
+
+                    # Update the submission times in bulk using case statements
+                    Submission.objects.filter(
+                        pk__in=[submission_obj.pk for submission_obj in submissions_to_update]
+                    ).update(
+                        submission_time=Case(*case_statements, default=F('submission_time'))
+                    )
+                    logger.info(f"{len(submissions_to_update)} Submissions Updated for: {handle}")
+            transaction.commit()
+
+            logger.info(f"All Submissions Saved for user: {handle}\n")
+            Update.objects.filter(name=f'submission_update_{handle}').update(epoch_time=int(current_time.timestamp()))
+
+        except Exception as e:
+            logger.exception(f"update_submission EXCEPTION: {e}")
+    else:
+        logger.info(f"{handle}'s Submission Already Updated | Update Time: {update_time}\n")
+
+# ======================================================================= 
+# ======================================================================= 
 
 def get_recent_solves(handle):
     start_date = datetime.datetime.now() - datetime.timedelta(days=30)
@@ -389,100 +433,178 @@ def get_recommended_problems(handle):
     return formatted_problems
     
 def genarate_recommend_problems(handle, rating, problem_cnt):
-    start_date = datetime.datetime.now() - datetime.timedelta(days=30)
-    start_date = int(start_date.timestamp())
-    submissions = Submission.objects.filter(handle=handle, submission_time__gte=start_date)
-
-    if not Submission.objects.filter(handle=handle).exists():
-        return
-    
-    recent_tags = {}
-    for submission in submissions:
-        for tag in submission.problem.tags.all():
-            recent_tags[tag.name] = recent_tags.get(tag.name, 0) + 1
+    try:
+        # Calculate the start date as 30 days ago
+        start_date = datetime.datetime.now() - datetime.timedelta(days=30)
+        start_date = int(start_date.timestamp())
+        
+        # Get all submissions for the handle
+        submissions = Submission.objects.filter(handle=handle)
+        
+        # Check if there are any submissions for the handle
+        if not submissions.exists():
+            logger.info(f'User {handle} does not have any submissions')
+            return
+        
+        logger.info(f'Recommending problems for handle: {handle}')
+        
+        # Exclude submissions submitted before the start date
+        submissions = submissions.exclude(submission_time__lt=start_date)
+        
+        # Calculate the frequency of recent tags
+        recent_tags = {tag['problem__tags__name']: tag['frequency'] for tag in submissions.values('problem__tags__name').annotate(frequency=Count('problem__tags')).values('problem__tags__name', 'frequency')}
+        
+        # Calculate the total number of tags solved by the user
+        total_tag_solved = sum(value for key, value in recent_tags.items()) or 1
+        
+        # Adjust the rating based on the user's rating
+        rating = int((rating + 50) / 100) * 100
             
-    total_tag_solved = sum(frq for tag, frq in recent_tags.items()) or 1
-    
-    rating = int((rating+50)/100) * 100
-    
-    recommended_problems = Problem.objects.exclude(submission__handle=handle).filter(rating__gte=rating+100, rating__lte=rating+300)
-    
-    recommended_problems_probability = []
-    for problem in recommended_problems:
-        tags = [tag.name for tag in problem.tags.all()]
-        probability = (1.0 - (sum(recent_tags.get(tag, 0) for tag in tags) / total_tag_solved)) * int(problem.problem_id.split('.')[0])
-        recommended_problems_probability.append((problem, probability))
-
-    chosen_problems = random.choices(
-        [q[0] for q in recommended_problems_probability],
-        [q[1] for q in recommended_problems_probability],
-        k=problem_cnt,
-    )   
-    
-    current_time = datetime.datetime.now()
-    current_time = datetime.datetime(current_time.year, current_time.month, current_time.day)
-    
-    with transaction.atomic():
-        for problem in chosen_problems:
-            RecommendedProblem.objects.create(
-                handle=handle,
+        # Get the recommended problems based on the adjusted rating
+        recommended_problems = Problem.objects.exclude(submission__handle=handle).filter(
+            rating__gte=rating + 100, 
+            rating__lte=rating + 300
+        ).prefetch_related('tags')
+        
+        logger.info(f'Problem recommendation in progress for handle: {handle}')
+        
+        # Calculate the probability for each recommended problem
+        recommended_problems_probability = []
+        for problem in recommended_problems:
+            tags = [tag.name for tag in problem.tags.all()]
+            if len(tags) > 0 and problem.rating > 0:
+                probability = (1.0 - (sum(recent_tags.get(tag, 0) for tag in tags) / total_tag_solved)) * int(problem.problem_id.split('.')[0])
+                recommended_problems_probability.append((problem, probability))
+        
+        logger.info(f'Probability calculated for problems | {handle}')
+        
+        # Choose a specified number of problems randomly based on their probabilities
+        chosen_problems = random.choices(
+            [q[0] for q in recommended_problems_probability],
+            [q[1] for q in recommended_problems_probability],
+            k=problem_cnt,
+        )
+        
+        # Get the current time and set it to the current day
+        current_time = datetime.datetime.now()
+        current_time = datetime.datetime(current_time.year, current_time.month, current_time.day)
+        
+        # Create the recommended problems to be stored in the database
+        recommended_problems_to_create = [
+            RecommendedProblem(
+                handle=handle, 
                 problem=problem,
                 date=int(current_time.timestamp())
             )
-    transaction.commit()
+            for problem in chosen_problems
+        ]
+        
+        # Store the recommended problems in the database
+        with transaction.atomic():
+            RecommendedProblem.objects.bulk_create(recommended_problems_to_create)
+        transaction.commit()
+        
+        logger.info(f'Problem recommendation completed for handle: {handle}')
+
+    except Exception as e:
+        logger.exception(f'Problem Recommendation Exception for handle: {handle}: {e}')
 
 # =======================================================================
 # =======================================================================
 
-@shared_task
+# @shared_task # commenting out as deploing background worker is paid
 def update_problemset():
+    # Get or create the update object for problemset
     update, _ = Update.objects.get_or_create(name='problemset_update')
 
+    # Get the last update time
     update_time = update.epoch_time
     update_time = datetime.datetime.fromtimestamp(update_time)
     update_time = datetime.datetime(update_time.year, update_time.month, update_time.day)
 
+    # Get the current time
     current_time = datetime.datetime.now()
     current_time = datetime.datetime(current_time.year, current_time.month, current_time.day)
-
-    print("\nUpdate time:", update_time)
-    print("Current time:", current_time)
     
+    # Check if an update is required
     if update_time != current_time:
+        logger.info(f'Updating Problemset | Today: {current_time}')
+        
         try:
+            # Fetch problemset data from Codeforces API
             data = GetJSON()
             data.fetch('https://codeforces.com/api/problemset.problems')
             problemset = data.json['result']['problems']
             
-            problem_fetched = 0
-            with transaction.atomic():
-                for problem_data in problemset:
-                    try:
-                        problem_id = str(problem_data['contestId']) + '.' + problem_data['index']
-                        if not Problem.objects.filter(problem_id=problem_id).exists():
-                            rating = problem_data['rating'] if 'rating' in problem_data else 0
-
-                            problem = Problem.objects.create(
-                                problem_id=problem_id, 
-                                name=problem_data['name'],
-                                rating=rating
-                            )
-                            for tag_name in problem_data['tags']:
-                                tag, _ = Tag.objects.get_or_create(name=tag_name)
-                                problem.tags.add(tag)
-
-                            problem_fetched += 1
-                            if problem_fetched % 10 == 0:
-                                print(f'Total {problem_fetched} problem fetched')
-
-                    except Exception as e:
-                        print("Problem set processing exception:", e) 
-
-            transaction.commit()     
+            # Get existing problem IDs and tags
+            existing_problem_ids = set(Problem.objects.values_list("problem_id", flat=True))
+            existing_tags = {tag.name: tag for tag in Tag.objects.all()}
+            total_problem_processed = 0
             
+            with transaction.atomic():
+                problems_to_create = []
+                problems_tags = {}
+                
+                for problem_data in problemset:
+                    problem_id = str(problem_data.get('contestId')) + '.' + problem_data.get('index')
+                    
+                    # Check if the problem is not already in the database
+                    if problem_id not in existing_problem_ids:
+                        # Create a new problem object
+                        problem = Problem(
+                            problem_id=problem_id, 
+                            name=problem_data.get('name'),
+                            rating=problem_data.get('rating', 0)
+                        )
+                        problems_to_create.append(problem)
+                        
+                        # Build the list of tags for the problem
+                        if problem_id not in problems_tags:
+                            problems_tags[problem_id] = []
+                            
+                        for tag_name in problem_data['tags']:
+                            if tag_name in existing_tags:
+                                problems_tags[problem_id].append(existing_tags[tag_name])
+                            else:    
+                                problems_tags[problem_id].append(Tag.objects.get_or_create(name=tag_name)[0])
+                        
+                    # Batch create problems in the database
+                    if len(problems_to_create) >= 100:
+                        Problem.objects.bulk_create(problems_to_create)
+                        
+                        # Add tags to the created problems
+                        for problem in problems_to_create:
+                            for tag in problems_tags[problem.problem_id]:
+                                problem.tags.add(tag)
+                        
+                        problems_to_create.clear()
+                        problems_tags.clear()
+                        logger.info("Batch created 100 problems")
+
+                    total_problem_processed += 1
+                    if total_problem_processed % 1000 == 0:
+                        logger.info(f'Total {total_problem_processed} problems processed')
+
+                # Create remaining problems in the database
+                if problems_to_create:
+                    Problem.objects.bulk_create(problems_to_create)
+                    
+                    # Add tags to the created problems
+                    for problem in problems_to_create:
+                        for tag in problems_tags[problem.problem_id]:
+                            problem.tags.add(tag)
+                    
+                    logger.info(f"Batch created {len(problems_to_create)} problems")
+                    
+            transaction.commit()      
+            
+            # Update the last update time
             Update.objects.filter(name='problemset_update').update(epoch_time=int(current_time.timestamp()))
             
+            logger.info("Problemset update completed successfully\n")
+            
         except Exception as e:
-            print("Problem Set Fatching Exception:", e)
-    
-    
+            logger.exception(f'Problem set processing exception: {e}')
+        
+    else:
+        logger.info(f'Problemset already updated | Last update: {update_time}\n')

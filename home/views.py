@@ -46,14 +46,14 @@ def recommended_problmes(request):
             request.session['last_profile_update'] = current_time
 
     # Update problemset in DB with Celery background task
-    update_problemset.delay()
+    update_problemset()#.delay() # commenting out as deploing background worker is paid
 
     # Codeforces user profile
     user = request.session.get('user', None)
     
     # Update user submission in DB with Celery background task
     if user:
-        update_submissions(handle)#.delay(handle)
+        update_submissions(handle)#.delay(handle) # commenting out as deploing background worker is paid
     
     # Recent solve data
     recent_solves = get_recent_solves(handle)

@@ -104,9 +104,30 @@ WSGI_APPLICATION = 'CodeChaser.wsgi.application'
 #     }
 # }
 
+# Remote Database Configuration
 import dj_database_url
 DATABASES = {
     'default' : dj_database_url.parse(env('DATABASE_URL')),
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',  # Adjust the log level as per your needs
+    },
+    'loggers': {
+        # Configure the logger for your app
+        'home': {
+            'level': 'DEBUG',  # Adjust the log level as per your needs
+        },
+    },
 }
 
 

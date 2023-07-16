@@ -92,12 +92,12 @@
                         
                         {% if todays_recommended_problems %}
                             {% if todays_recommended_problems.1 < 60 %}
-                            <button class="btn btn-outline-warning">
+                            <button class="btn btn-warning">
                                 💡 For more problem Solve atleast 60%
                             </button>
                             {% else %}
                             <a href="{% url 'generate_recommended_problmes' %}">
-                                <button class="btn btn-outline-success" type="submit">
+                                <button class="btn btn-success" type="submit">
                                     🧸 Give me more problems
                                 </button>
                             </a>
@@ -135,7 +135,11 @@
                     </td>
                     <td>{{recommended_problem.0.problem.rating}}</td>
                     <td>{{recommended_problem.0.problem.tags.all|join:', '}} </td>
-                    <td class="font-weight-bold {% if recommended_problem.1 == 'solved' %}text-success{% else %}text-danger{% endif %}"> {{ recommended_problem.1|title }} </td>
+                    <td class="font-weight-bold"> 
+                        <button class="btn {% if recommended_problem.1 == 'solved' %}btn-success{% else %}btn-outline-danger{% endif %}" style="width: 100%">
+                            {{ recommended_problem.1|title }} 
+                        </button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -186,7 +190,11 @@
                     </td>
                     <td>{{recommended_problem.0.problem.rating}}</td>
                     <td>{{recommended_problem.0.problem.tags.all|join:', '}} </td>
-                    <td class="font-weight-bold {% if recommended_problem.1 == 'solved' %}text-success{% else %}text-danger{% endif %}">{{recommended_problem.1|title}} </td>
+                    <td class="font-weight-bold"> 
+                        <button class="btn {% if recommended_problem.1 == 'solved' %}btn-success{% else %}btn-outline-danger{% endif %}" style="width: 100%">
+                            {{ recommended_problem.1|title }} 
+                        </button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
