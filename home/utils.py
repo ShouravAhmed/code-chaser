@@ -416,6 +416,8 @@ def get_recent_solves(handle):
                 break
     
         category_frequency[category] = category_frequency.get(category, 0) + 1
+    
+    category_frequency = dict(sorted(category_frequency.items()))
     return category_frequency
     
 def get_recommended_problems(handle):
@@ -478,12 +480,33 @@ def genarate_recommend_problems(handle, rating, problem_cnt):
         
         logger.info(f'Probability calculated for problems | {handle}')
         
+        # Calculate the rating levels
+        rating_levels = [rating + 100, rating + 200, rating + 300]
+
         # Choose a specified number of problems randomly based on their probabilities
-        chosen_problems = random.choices(
-            [q[0] for q in recommended_problems_probability],
-            [q[1] for q in recommended_problems_probability],
-            k=problem_cnt,
-        )
+        chosen_problems = []
+        if problem_cnt == 10:
+            problems_by_level = {level: [[problem, probability] for problem, probability in recommended_problems_probability if problem.rating == level] for level in rating_levels}
+            cnt = 1
+            for level in rating_levels:
+                level_problems = problems_by_level[level]
+                chosen_problems.extend(
+                    random.choices(
+                        [p[0] for p in level_problems],
+                        [p[1] for p in level_problems],
+                        k=(3 if cnt <= 2 else 4)
+                    )
+                )
+                cnt += 2
+        else:
+            chosen_problems = random.choices(
+                [q[0] for q in recommended_problems_probability],
+                [q[1] for q in recommended_problems_probability],
+                k=problem_cnt,
+            )
+
+        # Shuffle the chosen problems to ensure randomness
+        random.shuffle(chosen_problems)
         
         # Get the current time and set it to the current day
         current_time = datetime.datetime.now()
