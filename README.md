@@ -1,4 +1,4 @@
-# CodeChaser
+# [CodeChaser](https://codechaser.onrender.com/)
 
 ## Project Overview
 The project is a web application designed to enhance coding skills and provide opportunities for growth in the field of competitive programming. It offers a range of features to help users improve their problem-solving abilities, stay updated on upcoming contests, and explore career opportunities in the tech industry.
@@ -40,12 +40,14 @@ The project is deployed and accessible at [https://codechaser.onrender.com/](htt
 
 ## Installation and Local Setup
 To run the project locally, follow these steps:
-0. Make sure you have Python and pip installed
-1. Clone the GitHub repository: `git clone https://github.com/ShouravAhmed/code-chaser`
-2. Install the required dependencies: `pip install -r requirements.txt`
-3. Set up the database: `python manage.py migrate`
-4. Run the development server: `python manage.py runserver`
-5. Open your web browser and visit `http://localhost:8000` to view the project.
+1. Make sure you have Python and pip installed
+2. Clone the GitHub repository: `git clone https://github.com/ShouravAhmed/code-chaser`
+3. Install the required dependencies: `pip install -r requirements.txt`
+4. Set up the database: `python manage.py migrate`
+5. Create .env file and provide environment varibales following env.example
+6. Change Database option to local sqlite db from setting.py
+7. Run the development server: `python manage.py runserver`
+8. Open your web browser and visit `http://localhost:8000` to view the project.
 
 ## Contact
 For any inquiries or collaborations, feel free to reach out to me via:
