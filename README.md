@@ -59,4 +59,5 @@ This project acknowledges the following resources:
 - [Codeforces API](https://codeforces.com/apiHelp/methods) for problem recommendation.
 - [Kontest API](https://kontests.net/api/) for retrieving upcoming contest data.
 - [Tahanima's Blog](https://tahanima.github.io/) for providing valuable career data on software companies in Bangladesh.
+
 We express our gratitude to these resources for their contribution to the project.
