@@ -1,4 +1,10 @@
-# [CodeChaser](https://codechaser.onrender.com/)
+# *CodeChaser*
+
+[![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
+![Django](https://img.shields.io/badge/django-%23092E20.svg?style=for-the-badge&logo=django&logoColor=white)
+[![GitHub license](https://img.shields.io/github/license/ShouravAhmed/code-chaser.svg)](https://github.com/ShouravAhmed/code-chaser/blob/main/LICENSE)
+[![GitHub forks](https://img.shields.io/github/forks/ShouravAhmed/code-chaser.svg?style=social&label=Fork)](https://github.com/ShouravAhmed/code-chaser)
+[![GitHub stars](https://img.shields.io/github/stars/ShouravAhmed/code-chaser.svg?style=social&label=Stars)](https://github.com/ShouravAhmed/code-chaser)
 
 ## Project Overview
 The project is a web application designed to enhance coding skills and provide opportunities for growth in the field of competitive programming. It offers a range of features to help users improve their problem-solving abilities, stay updated on upcoming contests, and explore career opportunities in the tech industry.
