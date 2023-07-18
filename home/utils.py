@@ -439,37 +439,37 @@ def genarate_recommend_problems(handle, rating, problem_cnt):
         # Calculate the start date as 30 days ago
         start_date = datetime.datetime.now() - datetime.timedelta(days=30)
         start_date = int(start_date.timestamp())
-        
+
         # Get all submissions for the handle
         submissions = Submission.objects.filter(handle=handle)
-        
+
         # Check if there are any submissions for the handle
         if not submissions.exists():
             logger.info(f'User {handle} does not have any submissions')
             return
-        
+
         logger.info(f'Recommending problems for handle: {handle}')
-        
+
         # Exclude submissions submitted before the start date
         submissions = submissions.exclude(submission_time__lt=start_date)
-        
+
         # Calculate the frequency of recent tags
         recent_tags = {tag['problem__tags__name']: tag['frequency'] for tag in submissions.values('problem__tags__name').annotate(frequency=Count('problem__tags')).values('problem__tags__name', 'frequency')}
-        
+
         # Calculate the total number of tags solved by the user
         total_tag_solved = sum(value for key, value in recent_tags.items()) or 1
-        
+
         # Adjust the rating based on the user's rating
         rating = int((rating + 50) / 100) * 100
-            
+
         # Get the recommended problems based on the adjusted rating
         recommended_problems = Problem.objects.exclude(submission__handle=handle).filter(
             rating__gte=rating + 100, 
             rating__lte=rating + 300
         ).prefetch_related('tags')
-        
+
         logger.info(f'Problem recommendation in progress for handle: {handle}')
-        
+
         # Calculate the probability for each recommended problem
         recommended_problems_probability = []
         for problem in recommended_problems:
@@ -477,41 +477,50 @@ def genarate_recommend_problems(handle, rating, problem_cnt):
             if len(tags) > 0 and problem.rating > 0:
                 probability = (1.0 - (sum(recent_tags.get(tag, 0) for tag in tags) / total_tag_solved)) * int(problem.problem_id.split('.')[0])
                 recommended_problems_probability.append((problem, probability))
-        
+
         logger.info(f'Probability calculated for problems | {handle}')
-        
+
         # Calculate the rating levels
         rating_levels = [rating + 100, rating + 200, rating + 300]
 
         # Choose a specified number of problems randomly based on their probabilities
         chosen_problems = []
-        if problem_cnt == 10:
-            problems_by_level = {level: [[problem, probability] for problem, probability in recommended_problems_probability if problem.rating == level] for level in rating_levels}
-            cnt = 1
-            for level in rating_levels:
+        problems_by_level = {level: [[problem, probability] for problem, probability in recommended_problems_probability if problem.rating == level] for level in rating_levels}
+        
+        if problem_cnt == 6:    
+            for cnt, level in enumerate(rating_levels, start=1):
+            
                 level_problems = problems_by_level[level]
                 chosen_problems.extend(
+            
                     random.choices(
                         [p[0] for p in level_problems],
                         [p[1] for p in level_problems],
-                        k=(3 if cnt <= 2 else 4)
+            
+                        k=(3 if cnt == 1 else (2 if cnt == 2 else 1))
                     )
                 )
-                cnt += 2
         else:
-            chosen_problems = random.choices(
-                [q[0] for q in recommended_problems_probability],
-                [q[1] for q in recommended_problems_probability],
-                k=problem_cnt,
-            )
+            for cnt, level in enumerate(rating_levels[1:], start=1):
+            
+                level_problems = problems_by_level[level]
+                chosen_problems.extend(
+            
+                    random.choices(
+                        [p[0] for p in level_problems],
+                        [p[1] for p in level_problems],
+            
+                        k=(1 if cnt == 1 else 2)
+                    )
+                )
 
         # Shuffle the chosen problems to ensure randomness
         random.shuffle(chosen_problems)
-        
+
         # Get the current time and set it to the current day
         current_time = datetime.datetime.now()
         current_time = datetime.datetime(current_time.year, current_time.month, current_time.day)
-        
+
         # Create the recommended problems to be stored in the database
         recommended_problems_to_create = [
             RecommendedProblem(
@@ -521,12 +530,12 @@ def genarate_recommend_problems(handle, rating, problem_cnt):
             )
             for problem in chosen_problems
         ]
-        
+
         # Store the recommended problems in the database
         with transaction.atomic():
             RecommendedProblem.objects.bulk_create(recommended_problems_to_create)
         transaction.commit()
-        
+
         logger.info(f'Problem recommendation completed for handle: {handle}')
 
     except Exception as e:

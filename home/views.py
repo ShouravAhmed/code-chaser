@@ -93,12 +93,12 @@ def generate_recommended_problmes(request):
         
         # Generate Recommended Problems
         if todays_recommended_problems:
-            if todays_recommended_problems[1] >= 60:
+            if todays_recommended_problems[1] >= 50:
                 genarate_recommend_problems(user.get('handle'), user.get('current_rating'), 3)
             else:
                 print("Solve more Get more")
         else:
-            genarate_recommend_problems(user.get('handle'), user.get('current_rating'), 10)
+            genarate_recommend_problems(user.get('handle'), user.get('current_rating'), 6)
         
     return redirect('recommended_problmes')
 
