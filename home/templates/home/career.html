@@ -49,6 +49,8 @@
                     <td>
                         {% if company.CareerPage == "Unknown" %}
                         {{company.CareerPage}}
+                        {% elif forloop.counter == 1 %}
+                        <a href="https://careers.optimizely.com/" target="_blank">CareerPage</a>
                         {% else %}
                         <a href="{{company.CareerPage}}" target="_blank">CareerPage</a>
                         {% endif %}
