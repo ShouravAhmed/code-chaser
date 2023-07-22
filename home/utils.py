@@ -158,12 +158,29 @@ def GetCompaniesDetails():
 
 class GetJSON:
     def __init__(self):
-        self.hdr = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36'}
+        self.cookies = {
+            'cf_chl_2': 'cbf2bdc53f85149',
+            'cf_clearance': '4J.b2Mx98JlD.Ck8.0LKwI7jckebjItqSpmWnb9lnoo-1690000599-0-250.0.0',
+        }
+
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            # 'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            # 'Cookie': 'cf_chl_2=cbf2bdc53f85149; cf_clearance=4J.b2Mx98JlD.Ck8.0LKwI7jckebjItqSpmWnb9lnoo-1690000599-0-250.0.0',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+        }
         self.session = requests.Session()
         self.json = None
     def fetch(self, url):
         try:
-            with self.session.get(url, headers = self.hdr) as responce:
+            with self.session.get(url, cookies=self.cookies, headers=self.headers) as responce:
                 self.json = responce.json()
         except Exception as e:
             logger.exception(f"GetJSON Exception: {e}")
@@ -261,7 +278,8 @@ def update_user_profile(handle):
         data.fetch(f'https://codeforces.com/api/user.info?handles={handle}')
         
         profile = data.json
-        if profile['status'] != 'OK':
+        if not profile or profile['status'] != 'OK':
+            logger.exception(f'User.info status for {handle} is not ok')
             return None
         
         profile = profile['result'][0]
@@ -306,13 +324,14 @@ def update_submissions(handle):
 
             # Check if the submissions status is OK
             submissions = data.json
-            if submissions['status'] != 'OK':
+            if not submissions or submissions['status'] != 'OK':
                 logger.exception(f"{handle}'s Submission Status Not Ok")
                 return
 
             # Get the submissions data
             submissions = submissions['result']
-
+            logger.info(f'{len(submissions)} submission loaded from CF for {handle}')
+            
             # Fetch solved problems and all problems in bulk to optimize database queries
             solved_problems = {
                 submission.problem.problem_id: submission
@@ -566,7 +585,13 @@ def update_problemset():
             # Fetch problemset data from Codeforces API
             data = GetJSON()
             data.fetch('https://codeforces.com/api/problemset.problems')
-            problemset = data.json['result']['problems']
+            
+            problemset = data.json
+            if not problemset or problemset['status'] != 'OK':
+                logger.exception("Fetching problemset exception is not ok")
+                return
+            
+            problemset = problemset['result']['problems']
             
             # Get existing problem IDs and tags
             existing_problem_ids = set(Problem.objects.values_list("problem_id", flat=True))
